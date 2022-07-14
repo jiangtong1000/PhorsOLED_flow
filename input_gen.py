@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-logger = logging.getLogger("__name__")
+import sys
 
 element_table = {
     'H':    1,  'He':   2,  'Li':   3,  'Be':   4,  'B':    5,
@@ -36,19 +36,22 @@ for ikey in element_table.keys():
 
 def read_init_xyz(file):
     element_xyz = []
-    logger.info("Supported input filetype, gjf, com, xyz, chk")
+    # logger.info("Supported input filetype, gjf, com, xyz, chk")
     filename, file_extension = os.path.splitext(file)
     if file_extension in [".gjf", ".com", ".xyz"]:
         with open(file, "r") as filea:
             iatom = 1
             for icol in filea:
                 icol = icol.split()
-                if (len(icol) == 4) & (icol[0].isalpha()):
-                    assert icol[0].isalpha()
-                    iel_xyz = [icol[0]] + [float(ix) for ix in icol[1:]]
-                    element_xyz.append(iel_xyz)
-                    logger.info(f"Read coordinate of atom {iatom}, {iel_xyz}")
-                    iatom = iatom + 1
+                if (len(icol) == 4):
+                    if (icol[0].isalpha()):
+                        try:
+                            iel_xyz = [icol[0]] + [float(ix) for ix in icol[1:]]
+                            element_xyz.append(iel_xyz)
+                            # logger.info(f"Read coordinate of atom {iatom}, {iel_xyz}")
+                            iatom = iatom + 1
+                        except:
+                            pass
     elif file_extension in [".log", ".out"]:
         with open(file, "r") as file:
             logs = file.readlines()
@@ -76,9 +79,9 @@ def make_opt_input(element_xyz, multiplicity, dump_dir=None, charge=0,
     elems = list(elems - metal)
     elems = " ".join(elems)
     assert len(metal) == 1, f"Heavy metals {heavymetals} not detected or more than 1"
-    chk = 's0_opt' if multiplicity == 1 else 't1_opt'
+    chk = 's0-opt' if multiplicity == 1 else 't1-opt'
     if dump_dir == None:
-        dump_dir = "./s0_opt" if multiplicity == 1 else './t1_opt'
+        dump_dir = "./s0-opt" if multiplicity == 1 else './t1-opt'
     keywords = f"opt freq {functional}/gen pseudo=read"
     if element_xyz == 'read_chk':
         keywords = f"opt freq {functional}/gen pseudo=read geom=chk"
@@ -106,10 +109,10 @@ def make_opt_input(element_xyz, multiplicity, dump_dir=None, charge=0,
     buff.append('\n')
     output = "\n".join(buff)
     if multiplicity == 1:
-        with open(f"{dump_dir}/s0_opt.com", "w") as text_file:
+        with open(f"{dump_dir}/s0-opt.com", "w") as text_file:
             text_file.write("%s" % output)
     elif multiplicity == 3:
-        with open(f"{dump_dir}/t1_opt.com", "w") as text_file:
+        with open(f"{dump_dir}/t1-opt.com", "w") as text_file:
             text_file.write("%s" % output)
     else:
         raise AssertionError("multiplicity wrong")
@@ -117,9 +120,9 @@ def make_opt_input(element_xyz, multiplicity, dump_dir=None, charge=0,
 
 def make_edme_input(element_xyz, dump_dir="edme"):
     make_opt_input(element_xyz, 3, dump_dir)
-    os.system(f"python gjf2mol.py {dump_dir}/t1_opt.com")
-    os.system(f"mv t1_opt.mol {dump_dir}")
-    with open(f"{dump_dir}/t1_opt.mol", "r") as file:
+    python_path = sys.executable
+    os.system(f"{python_path} gjf2mol.py {dump_dir}/t1-opt.com")
+    with open(f"{dump_dir}/t1-opt.mol", "r") as file:
         mols = file.readlines()
         metal_idx = [idx for idx in range(len(mols))
                      if len(set(["Ir", "Pt", "Os"]).intersection(mols[idx].strip().split(" ")))==1]
@@ -129,19 +132,22 @@ def make_edme_input(element_xyz, dump_dir="edme"):
             line_i.append("Basis=lanl2dz_ecp ECP=lanl2dz_ecp\n")
             mols[metal_idx[0]-1] = " ".join(line_i)
         else:
-            logger.error("Heavy metal Ir, Pt, Os not found")
+            # logger.error("Heavy metal Ir, Pt, Os not found")
             assert False
-    with open(f"{dump_dir}/t1_opt.mol", "w") as file:
+    with open(f"{dump_dir}/t1-opt.mol", "w") as file:
         file.writelines(mols)
 
 
 def make_soc_input(element_xyz, dump_dir='soc'):
+    elems = set([ielems[0] for ielems in element_xyz])
+    heavymetals = ["Ir", "Pt", "Os"]
+    metal = set(heavymetals).intersection(elems)
+    metal = metal.pop()
     with open(f"{dump_dir}/soc.inp", "w") as file:
         inps = ["! B3LYP ZORA ZORA-def2-SVP SARC/J RI-SOMF(1X) nopop\n",
                 "%tddft\n", "nroots 25\n", "dosoc true\n", "tda false\n", "end\n",
-                "%basis newgto Os \"SARC-ZORA-SVP\" end\n", "end\n", "* xyz 0 1\n"]
+                f"%basis newgto {metal} \"SARC-ZORA-SVP\" end\n", "end\n", "* xyz 0 1\n"]
         for ixyz in element_xyz:
             inps.append(f"{ixyz[0]} {ixyz[1]} {ixyz[2]} {ixyz[3]}\n")
         inps.append("end")
         file.writelines(inps)
-

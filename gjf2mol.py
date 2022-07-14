@@ -1,0 +1,224 @@
+#!/usr/bin/env python
+#
+# MOMAP toolkit, http://momap.net.cn
+# By Qikai Li, qkli@tsinghua.edu.cn, Tsinghua University
+#
+# Copyright (2018) Zhigang Shuai Group, Tsinghua University.
+
+import sys
+from getopt import getopt
+
+# Usage:
+#       python gjf2mol molecule.gjf
+#
+# It will convert the Gaussian gjf to Dalton mol file format, and the result
+# will be written to molecule.mol
+# 
+# Note: The Gaussian method/basis should be written as:
+#       b3lyp/STO-3g, with '/' as separator symbol.
+
+print ("**************  MOMAP Utility  **************")
+print ("* Convert Gaussian gjf to Dalton mol format *")
+print ("*********************************************")
+
+argv = sys.argv[1:]
+try:
+	opts, args = getopt(argv, "hh", ["help="])
+except getopt.GetoptError:
+	print ("Usage: ")
+	print ('    gjf2mol gau-input')
+	sys.exit(2)
+for opt, arg in opts:
+	if opt == '-h':
+		print ("Usage: ")
+		print ('    gjf2mol gau-input')
+		sys.exit(0)
+
+numarg = len(sys.argv) - 1
+if numarg < 1:
+	print ("Usage: ")
+	print ('    gjf2mol gau-input')
+	exit(1)
+
+
+infile = sys.argv[1]
+outfile = infile[:-4] + '.mol'
+
+gau_jobs = ['Density', 'Force', 'Freq', 'Geom', 'Guess', 'Massage',
+            'NMR', 'Opt','Polar', 'Pop', 'SCRF', 'SP', 'Scan', 'Volume' ]
+
+section = 0;
+header, geom, footer = [], [], []
+
+print("Reading file: %s" % infile)
+
+with open(infile, 'r') as f:
+	for line in f:
+		# check if a section ends
+		if not line.strip():
+			section += 1
+
+		# header section
+		if section <= 1:
+			header.append(line.strip())
+			h = line.strip()
+			if h.startswith("#"):
+				h2 = h[1:]
+				items = h2.split(" ")
+				for item in items:
+					if item.lower() == 'p':
+						continue
+
+					found = 0
+					for job in gau_jobs:
+						if item.lower() == job.lower():
+							found = 1
+							break
+					if found:
+						continue;
+
+		elif section == 2:
+			if not line.strip():
+				header.append(line.strip())
+			else:
+				# everything above is part of the header
+				geom.append(line.strip())
+
+		# footer
+		elif section >= 3:
+			if line.strip() and not line.strip().startswith('****'):
+				footer.append(line.strip())
+
+# Treat header
+gau_method = ''
+gau_basis = ''
+basis_glob = ''
+done = 0
+for h in header:
+	if '/' in h:
+		items = h.split()
+		for item in items:
+			if '/' in item:
+				mb = item.split('/')
+				gau_method = mb[0]
+				gau_basis = mb[1]
+				done = 1
+				break
+	if done:
+		break
+
+if gau_basis.lower() != 'gen':
+	basis_glob = gau_basis
+
+# Treat geometry
+chg = 0
+mult = 0
+a_sym, x, y, z = [], [], [], []
+n = 0
+for at in geom:
+	n += 1
+	if n == 1:
+		items = at.split(' ')
+		chg = int(items[0])
+		mult = int(items[1])
+	else:
+		items = at.split()
+		a_sym.append(items[0])
+		x.append(items[1])
+		y.append(items[2])
+		z.append(items[3])
+
+# Treat footer
+gen_dict = {}
+for i in range(0,len(footer),2):
+	keys = footer[i][:-2].strip().split()
+	val = footer[i+1] 
+
+	for key in keys:
+		d1 = {key: val}
+		gen_dict.update(d1)
+
+# for key, val in gen_dict.items():
+#    print("Key", key, 'points to', val)
+
+ELEMENTS = {
+    'H':    1,  'He':   2,  'Li':   3,  'Be':   4,  'B':    5,
+    'C':    6,  'N':    7,  'O':    8,  'F':    9,  'Ne':  10,
+    'Na':  11,  'Mg':  12,  'Al':  13,  'Si':  14,  'P':   15,
+    'S':   16,  'Cl':  17,  'Ar':  18,  'K':   19,  'Ca':  20,
+    'Sc':  21,  'Ti':  22,  'V':   23,  'Cr':  24,  'Mn':  25,
+    'Fe':  26,  'Co':  27,  'Ni':  28,  'Cu':  29,  'Zn':  30,
+    'Ga':  31,  'Ge':  32,  'As':  33,  'Se':  34,  'Br':  35,
+    'Kr':  36,  'Rb':  37,  'Sr':  38,  'Y':   39,  'Zr':  40,
+    'Nb':  41,  'Mo':  42,  'Tc':  43,  'Ru':  44,  'Rh':  45,
+    'Pd':  46,  'Ag':  47,  'Cd':  48,  'In':  49,  'Sn':  50,
+    'Sb':  51,  'Te':  52,  'I':   53,  'Xe':  54,  'Cs':  55,
+    'Ba':  56,  'La':  57,  'Ce':  58,  'Pr':  59,  'Nd':  60,
+    'Pm':  61,  'Sm':  62,  'Eu':  63,  'Gd':  64,  'Tb':  65,
+    'Dy':  66,  'Ho':  67,  'Er':  68,  'Tm':  69,  'Yb':  70,
+    'Lu':  71,  'Hf':  72,  'Ta':  73,  'W':   74,  'Re':  75,
+    'Os':  76,  'Ir':  77,  'Pt':  78,  'Au':  79,  'Hg':  80,
+    'Tl':  81,  'Pb':  82,  'Bi':  83,  'Po':  84,  'At':  85,
+    'Rn':  86,  'Fr':  87,  'Ra':  88,  'Ac':  89,  'Th':  90,
+    'Pa':  91,  'U':   92,  'Np':  93,  'Pu':  94,  'Am':  95,
+    'Cm':  96,  'Bk':  97,  'Cf':  98,  'Es':  99,  'Fm': 100,
+    'Md': 101,  'No': 102,  'Lr': 103,  'Rf': 104,  'Db': 105,
+    'Sg': 106,  'Bh': 107,  'Hs': 108,  'Mt': 109,  'Ds': 110,
+    'Rg': 111,  'Cn': 112,  'Nh': 113,  'Fl': 114,  'Mc': 115,
+    'Lv': 116,  'Ts': 117,  'Og': 118
+}
+
+# Find number of atom types
+a_id = []
+sym_set = set()
+for s in a_sym:
+	for (k, v) in ELEMENTS.items():
+		if k.lower() == s.lower():
+			a_id.append(v)
+			sym_set.add(s)
+# print a_id
+# print sym_set
+
+# reverse the name list
+set_str = []
+for st in sym_set:
+	set_str.append(st)
+# print(set_str[::-1])
+
+print ("Writting file: %s" % outfile)
+
+with open(outfile, 'w') as f:
+	f.write("ATOMBASIS\n")
+	f.write("Generated by MOMAP\n")
+	f.write("through gjf2mol.py\n")
+	f.write("Atomtypes=%d Charge=0 Angstrom NoSymmetry\n" % len(sym_set))
+
+	for st in set_str[::-1]:
+		bas = ''
+		ID = 0
+		# print (st)
+		for (k, v) in ELEMENTS.items():
+			if k.lower() == st.lower():
+				ID = v
+				break
+
+		if gau_basis.lower() == 'gen':
+			bas = gen_dict[st]
+		else:
+			bas = basis_glob
+
+		ni = 0
+		for si in a_sym:
+			if st.lower() == si.lower():
+				ni += 1
+
+		f.write("Charge=%d.0 Atoms=%d Basis=%s\n" % (ID, ni, bas))
+
+		i = -1
+		for si in a_sym:
+			i += 1
+			if st.lower() == si.lower():
+				f.write("%-2s %14s %14s %14s\n" % (a_sym[i], x[i], y[i], z[i]))
+
+print ("Successfully done.")
+
