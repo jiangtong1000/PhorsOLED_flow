@@ -22,6 +22,8 @@
   cp your_database/mol1.gjf .
   python oled_dflow.py mol1.gjf
   ```
+  
+  and it carries out the following steps automatically.
 
   ```mermaid
     graph
