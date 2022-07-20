@@ -24,7 +24,7 @@ import time
 import os
 import sys
 
-gjf_file = sys.argv[1]
+gjf_file = str(sys.argv[1])
 
 config["host"] = "http://39.106.93.187:32746"
 config["k8s_api_server"] = "https://101.200.186.161:6443"

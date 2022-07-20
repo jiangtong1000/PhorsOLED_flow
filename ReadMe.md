@@ -1,6 +1,41 @@
 # QM Workflow for Phorsphorescent OLED Molecules
 
-## 1. Example for one molecule:
+## 0. The workflow is supported by [dflow](https://github.com/deepmodeling/dflow)
+
+(though, some useful scripts for generating inputs can be used if not using dflow, see [below](#jump))
+
+- Use dflow to submit the workflow job on the platform of [Bohrium](https://bohrium.dp.tech/)
+
+  Before using it, config the username and password in `oled_flow.py`:
+
+  ```python
+   lebesgue_context = LebesgueContext(
+      1         username="Bohrium username",
+      2         password="Bohrium password",
+  ```
+
+  ```bash
+  git clone https://github.com/jiangtong1000/PhorsOLED_flow.git
+  cd PhorsOLED_flow
+  cp mol1.gjf .
+  python oled_dflow.py mol1.gjf
+  ```
+
+  ```mermaid
+    graph
+  E[mol1.gjf] -->|Gaussian|F(optimize s0)
+  F -->|Gaussian|A{optimize t1}
+  A -->|Dalton|B(oscilator strength)
+  A -->|ORCA|C(spin-orbit coupling)
+  B -->D{Outputs}
+  C --> D
+  A --> D
+  F --> D{All Parameters}
+  D -->|MOMAP| G{decay rate, PLQY}
+  ```
+
+
+## 1. <span id="jump">Basis scripts for input generation</span>
 
 - Generate s0-opt.com, **Gaussian**
 
@@ -35,7 +70,9 @@
   make_soc_input("t1-opt/t1-opt.log") # generate input file ./soc/soc.inp for ORCA
   ```
 
-## 2. Batch tasks management in [Bohrium](https://bohrium.dp.tech/)
+## 2. Batch tasks management on [Bohrium](https://bohrium.dp.tech/)
+
+You can also directly submit batch tasks on Bohrium, without using dflow, which is only semi-automatic.
 
 After integrating the functions stated above, the workflow in the platform of [Bohrium](https://bohrium.dp.tech/) is totally handled by two script files: `submit.py` and `download.py` that submit calculations / download results for a batch of molcules at the same time, both of which run with an argument for job type including `"s0-opt", "t1-opt", "soc", "edme"`.
 
@@ -93,29 +130,3 @@ A[All t1 logs] -->|submit.py|C(spin-orbit coupling)
 B -->|download.py| D{Outputs}
 C -->|download.py| D
 ```
-
-## 3. Workflow using [dflow](https://github.com/deepmodeling/dflow)
-
-- Use dflow to submit the workflow job in Bohrium
-
-  ```bash
-  git clone https://github.com/jiangtong1000/PhorsOLED_flow.git
-  cd PhorsOLED_flow
-  cp mol1.gjf .
-  python oled_dflow.py
-  ```
-
-  ```mermaid
-    graph
-  E[mol1.gjf] -->|Gaussian|F(optimize s0)
-  F -->|Gaussian|A{optimize t1}
-  A -->|Dalton|B(oscilator strength)
-  A -->|ORCA|C(spin-orbit coupling)
-  B -->D{Outputs}
-  C --> D
-  A --> D
-  F --> D{All Parameters}
-  D -->|MOMAP| G{decay rate, PLQY}
-  ```
-
-  
