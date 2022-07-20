@@ -17,8 +17,8 @@
   Then carry out the workflow for a given molecular metal complexe structure:
   
   ```bash
-  git clone https://github.com/jiangtong1000/PhorsOLED_flow.git
-  cd PhorsOLED_flow
+  git clone https://github.com/jiangtong1000/PhorsOLED_workflow.git
+  cd PhorsOLED_workflow
   cp your_database/mol1.gjf .
   python oled_dflow.py mol1.gjf
   ```
