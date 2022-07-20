@@ -19,7 +19,7 @@
   ```bash
   git clone https://github.com/jiangtong1000/PhorsOLED_flow.git
   cd PhorsOLED_flow
-  cp mol1.gjf .
+  cp your_database/mol1.gjf .
   python oled_dflow.py mol1.gjf
   ```
 
