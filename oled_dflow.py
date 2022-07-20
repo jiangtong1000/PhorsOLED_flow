@@ -133,7 +133,7 @@ def main():
     edmeop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
     edme = Step(
         "edme",
-        edmeop
+        edmeop,
         artifacts={"input": T1_Opt.outputs.artifacts["output"]},
     )
 
