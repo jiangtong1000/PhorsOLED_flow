@@ -9,11 +9,13 @@
   Before using it, config the username and password in `oled_flow.py`:
 
   ```python
-   lebesgue_context = LebesgueContext(
-      1         username="Bohrium username",
-      2         password="Bohrium password",
+  lebesgue_context = LebesgueContext(
+                username="Bohrium username",
+                password="Bohrium password",
   ```
 
+  Then carry out the workflow for a given molecular metal complexe structure:
+  
   ```bash
   git clone https://github.com/jiangtong1000/PhorsOLED_flow.git
   cd PhorsOLED_flow
