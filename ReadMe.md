@@ -20,7 +20,7 @@
   git clone https://github.com/jiangtong1000/PhorsOLED_workflow.git
   cd PhorsOLED_workflow
   cp your_database/mol1.gjf .
-  python oled_dflow.py mol1.gjf
+  python oled_dflow.py
   ```
   
   and it carries out the following steps automatically.
