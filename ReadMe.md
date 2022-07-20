@@ -1,8 +1,8 @@
-# QM Workflow for Phorsphorescent OLED Molecules
+# Workflow for Phorsphorescent OLED Metal Complexe Molecules
 
-## 0. The workflow is supported by [dflow](https://github.com/deepmodeling/dflow)
+## 0. The workflow is supported by [dflow](https://github.com/deepmodeling/dflow), which a Python framework for constructing scientific computing workflows
 
-(though, some useful scripts for generating inputs can be used if not using dflow, see [below](#jump))
+(though, some useful scripts for generating inputs can be used even not using dflow, see [below](#jump))
 
 - Use dflow to submit the workflow job on the platform of [Bohrium](https://bohrium.dp.tech/)
 
