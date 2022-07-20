@@ -27,14 +27,13 @@ task_json = {
 job_id = {}
 if job_type in ["s0-opt", "t1-opt"]:
     worksh = ["#bin/bash\n", "\n",
-              "source /opt/Miniconda/bin/activate\n",
               "source /root/g16.sh\n",
               f"g16 {job_type}.com"]
 elif job_type == "soc":
-    worksh = ["export PATH=/root/soft/openmpi/bin:$PATH\n",
-              "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/soft/openmpi/lib\n",
-              "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/soft/orca\n",
-              "export PATH=$PATH:/root/soft/orca\n", "\n",
+    worksh = ["export PATH=/root/soft/openmpi/bin:\$PATH\n",
+              "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/root/soft/openmpi/lib\n",
+              "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/root/soft/orca\n",
+              "export PATH=\$PATH:/root/soft/orca\n", "\n",
               "orca soc.inp > soc.out"]
 elif job_type == "edme":
     worksh = ["#!/bin/bash\n",

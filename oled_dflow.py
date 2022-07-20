@@ -23,9 +23,6 @@ from glob import glob
 import time
 import os
 import sys
-
-gjf_file = str(sys.argv[1])
-
 config["host"] = "http://39.106.93.187:32746"
 config["k8s_api_server"] = "https://101.200.186.161:6443"
 config["token"] = "eyJhbGciOiJSUzI1NiIsImtpZCI6IlhMRGZjbnNRemE4RGQyUXRMZG1MX3NXeG5TMzlQTnhnSHZkS1lGM25SODAifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJhcmdvIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImFyZ28tdG9rZW4tOGY4djkiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiYXJnbyIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjBhNzI1N2JhLWZkZWQtNGI2OS05YWU2LTZhY2U0M2UxNjdlNiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDphcmdvOmFyZ28ifQ.ocRNsp_sdjM7dKpg_rYwPOKATslbDebDo807rkaVcqOScFKl11tqHbCwsekq4BZSEw-MaZjWAVsdE5jgvqIggp2qczx1QPMkBGQzkPwR4h7HbxYPUKIHkjlcvtsl06jf7urfzARUiD_UTahEFQLkUeN800Qblp-zMFBNLF2Y7_wW867drmQxynG1ssQ8agdu7yDZpwwJz-qzMMZsuZ7QNtL0pPQP2Iw_5C6jlos-Al1m3bgUJ5phh7yt-PBqwnMwEPaZWkVy9zFJc5t4J0jFc9nRnrR8fEd_OgJTTgQjHxS2DyXj9ZRUlGJA-tmHGqIJ7nuScv3lKwbb8TkeABq5DA"
@@ -54,10 +51,10 @@ class Gaussianop(OP):
                       "source /root/g16.sh\n",
                       f"g16 {self.name}.com"]
         elif self.name == "soc":
-            worksh = ["export PATH=/root/soft/openmpi/bin:$PATH\n",
-                      "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/soft/openmpi/lib\n",
-                      "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/soft/orca\n",
-                      "export PATH=$PATH:/root/soft/orca\n", "\n",
+            worksh = ["export PATH=/root/soft/openmpi/bin:\$PATH\n",
+                      "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/root/soft/openmpi/lib\n",
+                      "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/root/soft/orca\n",
+                      "export PATH=\$PATH:/root/soft/orca\n", "\n",
                       "orca soc.inp > soc.out"]
         elif self.name == "edme":
             worksh = ["#!/bin/bash\n",
@@ -66,7 +63,8 @@ class Gaussianop(OP):
         os.chdir(op_in["input"])
 
         if self.name == "s0-opt":
-            xyz_file = gjf_file
+            xyz_file = glob("*.gjf")[0]
+            assert len(glob("*.gjf")) == 1, f"more than 1 gjf detected"
         elif self.name == "t1-opt":
             xyz_file = "s0-opt.log"
         elif self.name in ["soc", "edme"]:
