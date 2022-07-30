@@ -107,8 +107,8 @@ def main():
     property_steps = []
 
     for file in glob("*/mol*"):
-        steps = Steps("batch")
         mol_idx = file.split("mol")[1]
+        steps = Steps(f"mol{mol_idx}")
         os.system(f"cp edme.dal {file}; cp gjf2mol.py {file}; cp input_gen.py {file}")
         s0op = PythonOPTemplate(Gaussianop("s0-opt"), image=image_dic["s0-opt"], command=["python3"])
         s0op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
@@ -156,7 +156,7 @@ def main():
         steps.add(S0_Opt)
         steps.add(T1_Opt)
         steps.add([soc, edme, T1_sp])
-        step = Step(f"{mol_idx}", steps)
+        step = Step(f"mol{mol_idx}", steps)
 
         property_steps.append(step)
 
