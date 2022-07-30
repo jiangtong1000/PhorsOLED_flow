@@ -29,25 +29,17 @@
   ```mermaid
     graph
    T[Workflow] --> E
-   T-->E2
   E[mol1] -->|Gaussian|F(optimize s0)
   F -->|Gaussian|A{optimize t1}
+  A -->|Gaussian|H{HOMO/LUMO}
   A -->|Dalton|B(oscilator strength)
   A -->|ORCA|C(spin-orbit coupling)
-  B -->D{Outputs}
+  B -->D
   C --> D
   A --> D
   F --> D{All Parameters}
   D -->|MOMAP| G{decay rate, PLQY}
-  E2[mol2] -->|Gaussian|F2(optimize s0)
-  F2 -->|Gaussian|A2{optimize t1}
-  A2 -->|Dalton|B2(oscilator strength)
-  A2 -->|ORCA|C2(spin-orbit coupling)
-  B2 -->D2{Outputs}
-  C2 --> D2
-  A2 --> D2
-  F2 --> D2{All Parameters}
-  D2 -->|MOMAP| G2{decay rate, PLQY}
-  T[Workflow] --> E3(mol3)
+  T[Workflow] --> E3(mol2 process)
+  T[Workflow] --> E2(mol3 process)
   T[Workflow] --> E4(...)
   ```
