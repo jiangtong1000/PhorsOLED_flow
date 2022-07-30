@@ -17,6 +17,7 @@
   Your database should contain folders named as `mol1, mol2, mol3,...` that contains the molecular structure (`.gjf`) in each of it.
 
   ```bash
+  conda activate your-dflow-environment
   git clone https://github.com/jiangtong1000/PhorsOLED_workflow.git
   cd PhorsOLED_workflow
   cp -r your_database .
@@ -47,5 +48,15 @@
   A2 --> D2
   F2 --> D2{All Parameters}
   D2 -->|MOMAP| G2{decay rate, PLQY}
-   T[Workflow] --> E3(...)
+   T[Workflow] --> E3(mol3)
+   E3[mol3] -->|Gaussian|F3(optimize s0)
+  F3 -->|Gaussian|A3{optimize t1}
+  A3 -->|Dalton|B3(oscilator strength)
+  A3 -->|ORCA|C3(spin-orbit coupling)
+  B3 -->D3{Outputs}
+  C3 --> D3
+  A3 --> D3
+  F3 --> D3{All Parameters}
+  D3 -->|MOMAP| G3{decay rate, PLQY}
+     T[Workflow] --> E4(...)
   ```
