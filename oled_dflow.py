@@ -105,9 +105,9 @@ def main():
 
     wf = Workflow(name="batch", context=lebesgue_context, host="http://39.106.93.187:32746")
     property_steps = []
-    steps = Steps("batch")
 
     for file in glob("*/mol*"):
+        steps = Steps("batch")
         mol_idx = file.split("mol")[1]
         os.system(f"cp edme.dal {file}; cp gjf2mol.py {file}; cp input_gen.py {file}")
         s0op = PythonOPTemplate(Gaussianop("s0-opt"), image=image_dic["s0-opt"], command=["python3"])
@@ -157,6 +157,7 @@ def main():
         steps.add(T1_Opt)
         steps.add([soc, edme, T1_sp])
         step = Step(f"{mol_idx}", steps)
+
         property_steps.append(step)
 
     wf.add(property_steps)
