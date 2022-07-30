@@ -127,7 +127,7 @@ def make_opt_input(element_xyz, multiplicity, name, dump_dir=None, charge=0,
 
 
 def make_edme_input(element_xyz, dump_dir="edme"):
-    make_opt_input(element_xyz, 3, dump_dir)
+    make_opt_input(element_xyz, 3, "t1-opt", dump_dir)
     python_path = sys.executable
     os.system(f"{python_path} gjf2mol.py {dump_dir}/t1-opt.com")
     with open(f"{dump_dir}/t1-opt.mol", "r") as file:
