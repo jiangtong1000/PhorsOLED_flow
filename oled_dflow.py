@@ -16,7 +16,8 @@ from dflow import (
     upload_artifact,
     download_artifact,
     Workflow,
-    Step
+    Step,
+    Steps
 )
 from pathlib import Path
 from glob import glob
@@ -46,7 +47,7 @@ class Gaussianop(OP):
         pydir = str(op_in["input"])
         sys.path.append(pydir)
         import input_gen
-        if self.name in ["s0-opt", "t1-opt"]:
+        if self.name in ["s0-opt", "t1-opt", "t1-sp"]:
             worksh = ["#bin/bash\n", "\n",
                       "source /root/g16.sh\n",
                       f"g16 {self.name}.com"]
@@ -67,12 +68,12 @@ class Gaussianop(OP):
             assert len(glob("*.gjf")) == 1, f"more than 1 gjf detected"
         elif self.name == "t1-opt":
             xyz_file = "s0-opt.log"
-        elif self.name in ["soc", "edme"]:
+        elif self.name in ["soc", "edme", "t1-sp"]:
             xyz_file = "t1-opt.log"
         element_xyz = input_gen.read_init_xyz(xyz_file)
-        if self.name in ["s0-opt", "t1-opt"]:
+        if self.name in ["s0-opt", "t1-opt", "t1-sp"]:
             multiplicity = 1 if self.name == "s0-opt" else 3
-            input_gen.make_opt_input(element_xyz, multiplicity, ".")
+            input_gen.make_opt_input(element_xyz, multiplicity, self.name, ".")
         elif self.name == "edme":
             input_gen.make_edme_input(element_xyz, ".")
         elif self.name == "soc":
@@ -93,8 +94,8 @@ def main():
         "soc": "LBG_Orca_1_v2"
     }
     lebesgue_context = LebesgueContext(
-        username="Bohrium username",
-        password="Bohrium password",
+        username="",
+        password="",
         executor="lebesgue_v2",
         extra={
                 "scass_type": "c32_m64_cpu",
@@ -102,43 +103,63 @@ def main():
         },
     )
 
-    s0op = PythonOPTemplate(Gaussianop("s0-opt"), image=image_dic["s0-opt"], command=["python3"])
-    s0op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
-    s0op.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
-    S0_Opt = Step(
-        "s0-opt",
-        s0op,
-        artifacts={"input": upload_artifact(["."])},
-    )
-    t1op = PythonOPTemplate(Gaussianop("t1-opt"), image=image_dic["t1-opt"], command=["python3"])
-    t1op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
-    t1op.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
-    T1_Opt = Step(
-        "t1-opt",
-        t1op,
-        artifacts={"input": S0_Opt.outputs.artifacts["output"]},
-    )
-    socop = PythonOPTemplate(Gaussianop("soc"), image=image_dic["soc"], command=["python3"])
-    socop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
-    socop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
-    soc = Step(
-        "soc",
-        socop,
-        artifacts={"input": T1_Opt.outputs.artifacts["output"]},
-    )
-    edmeop = PythonOPTemplate(Gaussianop("edme"), image=image_dic["edme"], command=["python3"])
-    edmeop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
-    edmeop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
-    edme = Step(
-        "edme",
-        edmeop,
-        artifacts={"input": T1_Opt.outputs.artifacts["output"]},
-    )
+    wf = Workflow(name="batch", context=lebesgue_context, host="http://39.106.93.187:32746")
+    property_steps = []
+    steps = Steps("batch")
 
-    wf = Workflow(name="gtest4", context=lebesgue_context, host="http://39.106.93.187:32746")
-    wf.add(S0_Opt)
-    wf.add(T1_Opt)
-    wf.add([edme, soc])
+    for file in glob("*/mol*"):
+        mol_idx = file.split("mol")[1]
+        os.system(f"cp edme.dal {file}; cp gjf2mol.py {file}; cp input_gen.py {file}")
+        s0op = PythonOPTemplate(Gaussianop("s0-opt"), image=image_dic["s0-opt"], command=["python3"])
+        s0op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        s0op.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        S0_Opt = Step(
+            f"{mol_idx}-s0-opt",
+            s0op,
+            artifacts={"input": upload_artifact([f"{file}"])},
+        )
+
+        t1op = PythonOPTemplate(Gaussianop("t1-opt"), image=image_dic["t1-opt"], command=["python3"])
+        t1op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        t1op.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        T1_Opt = Step(
+            f"{mol_idx}-t1-opt",
+            t1op,
+            artifacts={"input": S0_Opt.outputs.artifacts["output"]},
+        )
+
+        socop = PythonOPTemplate(Gaussianop("soc"), image=image_dic["soc"], command=["python3"])
+        socop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        socop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        soc = Step(
+            f"{mol_idx}-soc",
+            socop,
+            artifacts={"input": T1_Opt.outputs.artifacts["output"]},
+        )
+        edmeop = PythonOPTemplate(Gaussianop("edme"), image=image_dic["edme"], command=["python3"])
+        edmeop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        edmeop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        edme = Step(
+            f"{mol_idx}-edme",
+            edmeop,
+            artifacts={"input": T1_Opt.outputs.artifacts["output"]},
+        )
+        t1op = PythonOPTemplate(Gaussianop("t1-sp"), image=image_dic["t1-opt"], command=["python3"])
+        t1op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        t1op.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        T1_sp = Step(
+            f"{mol_idx}-t1-sp",
+            t1op,
+            artifacts={"input": T1_Opt.outputs.artifacts["output"]},
+        )
+
+        steps.add(S0_Opt)
+        steps.add(T1_Opt)
+        steps.add([soc, edme, T1_sp])
+        step = Step(f"{mol_idx}", steps)
+        property_steps.append(step)
+
+    wf.add(property_steps)
     wf.submit()
     # while wf.query_status() in ["Pending","Running"]:
     #     time.sleep(4)

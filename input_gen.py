@@ -70,21 +70,28 @@ def read_init_xyz(file):
     return element_xyz
 
 
-def make_opt_input(element_xyz, multiplicity, dump_dir=None, charge=0,
+def make_opt_input(element_xyz, multiplicity, name, dump_dir=None, charge=0,
                    functional="b3lyp", basis='6-31G**',
                    pseudo_basis="Lanl2DZ", nproc=16, mem=60):
+    assert name in ["s0-opt", "t1-opt", "t1-sp"], "job type wrong"
     elems = set([ielems[0] for ielems in element_xyz])
     heavymetals = ["Ir", "Pt", "Os"]
     metal = set(heavymetals).intersection(elems)
     elems = list(elems - metal)
     elems = " ".join(elems)
     assert len(metal) == 1, f"Heavy metals {heavymetals} not detected or more than 1"
-    chk = 's0-opt' if multiplicity == 1 else 't1-opt'
-    if dump_dir == None:
+    chk = name
+    if dump_dir is None:
         dump_dir = "./s0-opt" if multiplicity == 1 else './t1-opt'
-    keywords = f"opt freq {functional}/gen pseudo=read"
+    if name == "t1-sp":
+        keywords = f"{functional}/gen pseudo=read"
+    else:
+        keywords = f"opt freq {functional}/gen pseudo=read"
     if element_xyz == 'read_chk':
-        keywords = f"opt freq {functional}/gen pseudo=read geom=chk"
+        if name == 't1-sp':
+            keywords = f"{functional}/gen pseudo=read geom=chk"
+        else:
+            keywords = f"opt freq {functional}/gen pseudo=read geom=chk"
     chkkeywords = f'%chk={chk}.chk'
     nprockeywords = f'%nproc={nproc}'
     memkeywords = f'%mem={mem}gb'
@@ -108,14 +115,15 @@ def make_opt_input(element_xyz, multiplicity, dump_dir=None, charge=0,
     buff.append(pseudo_basis)
     buff.append('\n')
     output = "\n".join(buff)
-    if multiplicity == 1:
+    if name == "s0-opt":
         with open(f"{dump_dir}/s0-opt.com", "w") as text_file:
             text_file.write("%s" % output)
-    elif multiplicity == 3:
+    elif name == 't1-sp':
+        with open(f"{dump_dir}/t1-sp.com", "w") as text_file:
+            text_file.write("%s" % output)
+    elif name == "t1-opt":
         with open(f"{dump_dir}/t1-opt.com", "w") as text_file:
             text_file.write("%s" % output)
-    else:
-        raise AssertionError("multiplicity wrong")
 
 
 def make_edme_input(element_xyz, dump_dir="edme"):
