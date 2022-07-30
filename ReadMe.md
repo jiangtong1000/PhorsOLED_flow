@@ -48,15 +48,6 @@
   A2 --> D2
   F2 --> D2{All Parameters}
   D2 -->|MOMAP| G2{decay rate, PLQY}
-   T[Workflow] --> E3(mol3)
-   E3[mol3] -->|Gaussian|F3(optimize s0)
-  F3 -->|Gaussian|A3{optimize t1}
-  A3 -->|Dalton|B3(oscilator strength)
-  A3 -->|ORCA|C3(spin-orbit coupling)
-  B3 -->D3{Outputs}
-  C3 --> D3
-  A3 --> D3
-  F3 --> D3{All Parameters}
-  D3 -->|MOMAP| G3{decay rate, PLQY}
-     T[Workflow] --> E4(...)
+  T[Workflow] --> E3(mol3)
+  T[Workflow] --> E4(...)
   ```
