@@ -31,7 +31,7 @@
    T[Workflow] --> E
   E[mol1] -->|Gaussian|F(optimize s0)
   F -->|Gaussian|A{optimize t1}
-  A -->|Gaussian|H{HOMO/LUMO}
+  A -->|Read|H{HOMO/LUMO}
   A -->|Dalton|B(oscilator strength)
   A -->|ORCA|C(spin-orbit coupling)
   B -->D

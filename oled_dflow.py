@@ -47,7 +47,7 @@ class Gaussianop(OP):
         pydir = str(op_in["input"])
         sys.path.append(pydir)
         import input_gen
-        if self.name in ["s0-opt", "t1-opt", "t1-sp"]:
+        if self.name in ["s0-opt", "t1-opt"]:
             worksh = ["#bin/bash\n", "\n",
                       "source /root/g16.sh\n",
                       f"g16 {self.name}.com"]
@@ -68,10 +68,10 @@ class Gaussianop(OP):
             assert len(glob("*.gjf")) == 1, f"more than 1 gjf detected"
         elif self.name == "t1-opt":
             xyz_file = "s0-opt.log"
-        elif self.name in ["soc", "edme", "t1-sp"]:
+        elif self.name in ["soc", "edme"]:
             xyz_file = "t1-opt.log"
         element_xyz = input_gen.read_init_xyz(xyz_file)
-        if self.name in ["s0-opt", "t1-opt", "t1-sp"]:
+        if self.name in ["s0-opt", "t1-opt"]:
             multiplicity = 1 if self.name == "s0-opt" else 3
             input_gen.make_opt_input(element_xyz, multiplicity, self.name, ".")
         elif self.name == "edme":
@@ -144,18 +144,10 @@ def main():
             edmeop,
             artifacts={"input": T1_Opt.outputs.artifacts["output"]},
         )
-        t1op = PythonOPTemplate(Gaussianop("t1-sp"), image=image_dic["t1-opt"], command=["python3"])
-        t1op.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
-        t1op.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
-        T1_sp = Step(
-            f"{mol_idx}-t1-sp",
-            t1op,
-            artifacts={"input": T1_Opt.outputs.artifacts["output"]},
-        )
 
         steps.add(S0_Opt)
         steps.add(T1_Opt)
-        steps.add([soc, edme, T1_sp])
+        steps.add([soc, edme])
         step = Step(f"mol{mol_idx}", steps)
 
         property_steps.append(step)

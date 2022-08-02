@@ -73,7 +73,7 @@ def read_init_xyz(file):
 def make_opt_input(element_xyz, multiplicity, name, dump_dir=None, charge=0,
                    functional="b3lyp", basis='6-31G**',
                    pseudo_basis="Lanl2DZ", nproc=16, mem=60):
-    assert name in ["s0-opt", "t1-opt", "t1-sp"], "job type wrong"
+    assert name in ["s0-opt", "t1-opt"], "job type wrong"
     elems = set([ielems[0] for ielems in element_xyz])
     heavymetals = ["Ir", "Pt", "Os"]
     metal = set(heavymetals).intersection(elems)
@@ -83,15 +83,9 @@ def make_opt_input(element_xyz, multiplicity, name, dump_dir=None, charge=0,
     chk = name
     if dump_dir is None:
         dump_dir = "./s0-opt" if multiplicity == 1 else './t1-opt'
-    if name == "t1-sp":
-        keywords = f"{functional}/gen pseudo=read"
-    else:
-        keywords = f"opt freq {functional}/gen pseudo=read"
+    keywords = f"opt freq {functional}/gen pseudo=read"
     if element_xyz == 'read_chk':
-        if name == 't1-sp':
-            keywords = f"{functional}/gen pseudo=read geom=chk"
-        else:
-            keywords = f"opt freq {functional}/gen pseudo=read geom=chk"
+        keywords = f"opt freq {functional}/gen pseudo=read geom=chk"
     chkkeywords = f'%chk={chk}.chk'
     nprockeywords = f'%nproc={nproc}'
     memkeywords = f'%mem={mem}gb'
@@ -117,9 +111,6 @@ def make_opt_input(element_xyz, multiplicity, name, dump_dir=None, charge=0,
     output = "\n".join(buff)
     if name == "s0-opt":
         with open(f"{dump_dir}/s0-opt.com", "w") as text_file:
-            text_file.write("%s" % output)
-    elif name == 't1-sp':
-        with open(f"{dump_dir}/t1-sp.com", "w") as text_file:
             text_file.write("%s" % output)
     elif name == "t1-opt":
         with open(f"{dump_dir}/t1-opt.com", "w") as text_file:
