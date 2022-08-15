@@ -106,7 +106,7 @@ def main():
     wf = Workflow(name="batch", context=lebesgue_context, host="http://39.106.93.187:32746")
     property_steps = []
 
-    for file in glob("*/mol*"):
+    for file in glob("mol*"):
         mol_idx = file.split("mol")[1]
         steps = Steps(f"mol{mol_idx}")
         os.system(f"cp edme.dal {file}; cp gjf2mol.py {file}; cp input_gen.py {file}")
