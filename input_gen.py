@@ -55,6 +55,8 @@ def read_init_xyz(file):
     elif file_extension in [".log", ".out"]:
         with open(file, "r") as file:
             logs = file.readlines()
+            chk_converge = logs[-1].split()
+            assert ["Normal", "termination"] == chk_converge[:2], f"Not converged"
             line_idx = [idx for idx in range(len(logs))
                         if "Coordinates" in logs[idx].split(" ")][-1] + 3
             for iline in logs[line_idx:]:
