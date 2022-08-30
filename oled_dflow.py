@@ -64,8 +64,9 @@ class Gaussianop(OP):
         os.chdir(op_in["input"])
 
         if self.name == "s0-opt":
-            xyz_file = glob("*.gjf")[0]
-            assert len(glob("*.gjf")) == 1, f"more than 1 gjf detected"
+            comfile = glob("*.com") + glob("*.gjf")
+            assert len(comfile) == 1, f"more than 1 gjf detected"
+            xyz_file = comfile[0]
         elif self.name == "t1-opt":
             xyz_file = "s0-opt.log"
         elif self.name in ["soc", "edme"]:
@@ -147,7 +148,8 @@ def main():
 
         steps.add(S0_Opt)
         steps.add(T1_Opt)
-        steps.add([soc, edme])
+        # steps.add([soc, edme])
+        steps.add([soc])
         step = Step(f"mol{mol_idx}", steps)
 
         property_steps.append(step)
