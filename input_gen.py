@@ -119,6 +119,38 @@ def make_opt_input(element_xyz, multiplicity, name, dump_dir=None, charge=0,
             text_file.write("%s" % output)
 
 
+def make_tda_input(t1log, dump_dir='tda', nproc=16, mem=60, basis='6-31G**', pseudo_basis="Lanl2DZ"):
+    element_xyz = read_init_xyz(t1log)
+    elems = set([ielems[0] for ielems in element_xyz])
+    heavymetals = ["Ir", "Pt", "Os"]
+    metal = set(heavymetals).intersection(elems)
+    elems = list(elems - metal)
+    elems = " ".join(elems)
+    assert len(metal) == 1, f"Heavy metals {heavymetals} not detected or more than 1"
+    chkkeywords = '%chk=t1-log.chk'
+    nprockeywords = f'%nprocshared={nproc}'
+    memkeywords = f'%mem={mem}gb'
+    titlekeywords = 't1TDA'
+    chargekeywords = '0 1'
+    keywords = "TDA(triplet,NStates=3,Root=1) PBEpbe/gen IOP(3/76=1000003333) Iop(3/77=0666706667)  pseudo=read geom=chk"
+    buff = [chkkeywords, nprockeywords, memkeywords, '# {}'.format(keywords), '', titlekeywords, '', chargekeywords]
+    pseudo_element = metal.pop()
+    other_element = elems
+    buff.append('%s 0' % (pseudo_element))
+    buff.append(pseudo_basis)
+    buff.append('****')
+    buff.append('%s 0' % (other_element))
+    buff.append(basis)
+    buff.append('****')
+    buff.append('')
+    buff.append('%s 0' % (pseudo_element))
+    buff.append(pseudo_basis)
+    buff.append('\n')
+    output = "\n".join(buff)
+    with open(f"{dump_dir}/t1-tda.com", "w") as text_file:
+        text_file.write("%s" % output)
+
+
 def make_edme_input(element_xyz, dump_dir="edme"):
     make_opt_input(element_xyz, 3, "t1-opt", dump_dir)
     python_path = sys.executable
