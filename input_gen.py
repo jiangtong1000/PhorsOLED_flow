@@ -127,7 +127,7 @@ def make_tda_input(t1log, dump_dir='tda', nproc=16, mem=60, basis='6-31G**', pse
     elems = list(elems - metal)
     elems = " ".join(elems)
     assert len(metal) == 1, f"Heavy metals {heavymetals} not detected or more than 1"
-    chkkeywords = '%chk=t1-log.chk'
+    chkkeywords = '%chk=t1-tda.chk'
     nprockeywords = f'%nprocshared={nproc}'
     memkeywords = f'%mem={mem}gb'
     titlekeywords = 't1TDA'
