@@ -47,7 +47,7 @@ class Gaussianop(OP):
         pydir = str(op_in["input"])
         sys.path.append(pydir)
         import input_gen
-        if self.name in ["s0-opt", "t1-opt"]:
+        if self.name in ["s0-opt", "t1-opt", "s0-tda", "t1-tda"]:
             worksh = ["#bin/bash\n", "\n",
                       "source /root/g16.sh\n",
                       f"g16 {self.name}.com"]
@@ -67,14 +67,20 @@ class Gaussianop(OP):
             comfile = glob("*.com") + glob("*.gjf")
             assert len(comfile) == 1, f"more than 1 gjf detected"
             xyz_file = comfile[0]
-        elif self.name == "t1-opt":
+        elif self.name in ["t1-opt", "s0-tda"]:
             xyz_file = "s0-opt.log"
-        elif self.name in ["soc", "edme"]:
+        elif self.name in ["soc", "edme", "t1-tda"]:
             xyz_file = "t1-opt.log"
         element_xyz = input_gen.read_init_xyz(xyz_file)
         if self.name in ["s0-opt", "t1-opt"]:
             multiplicity = 1 if self.name == "s0-opt" else 3
             input_gen.make_opt_input(element_xyz, multiplicity, self.name, ".")
+        elif self.name == "s0-tda":
+            os.system("cp s0-opt.chk s0-tda.chk")
+            input_gen.make_tda_input(element_xyz, self.name, ".")
+        elif self.name == "t1-tda":
+            os.system("cp t1-opt.chk t1-tda.chk")
+            input_gen.make_tda_input(element_xyz, self.name, ".")
         elif self.name == "edme":
             input_gen.make_edme_input(element_xyz, ".")
         elif self.name == "soc":
@@ -91,6 +97,8 @@ def main():
     image_dic = {
         "s0-opt": "LBG_Gaussian_1_v2",
         "t1-opt": "LBG_Gaussian_1_v2",
+        "s0-tda": "LBG_Gaussian_1_v2",
+        "t1-tda": "LBG_Gaussian_1_v2",
         "edme": "LBG_Dalton_1_v1",
         "soc": "LBG_Orca_1_v2"
     }
@@ -129,6 +137,24 @@ def main():
             artifacts={"input": S0_Opt.outputs.artifacts["output"]},
         )
 
+        s0tdaop = PythonOPTemplate(Gaussianop("s0-tda"), image=image_dic["s0-tda"], command=["python3"])
+        s0tdaop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        s0tdaop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        S0_Tda = Step(
+            f"{mol_idx}-s0-tda",
+            s0tdaop,
+            artifacts={"input": S0_Opt.outputs.artifacts["output"]},
+        )
+
+        t1tdaop = PythonOPTemplate(Gaussianop("t1-tda"), image=image_dic["t1-tda"], command=["python3"])
+        t1tdaop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
+        t1tdaop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
+        T1_Tda = Step(
+            f"{mol_idx}-t1-tda",
+            t1tdaop,
+            artifacts={"input": T1_Opt.outputs.artifacts["output"]},
+        )
+
         socop = PythonOPTemplate(Gaussianop("soc"), image=image_dic["soc"], command=["python3"])
         socop.outputs.parameters["job_id"] = OutputParameter(value_from_path="/tmp/executor_info/job_id")
         socop.outputs.artifacts["job_id"] = OutputArtifact("/tmp/executor_info")
@@ -147,9 +173,9 @@ def main():
         )
 
         steps.add(S0_Opt)
-        steps.add(T1_Opt)
+        steps.add([T1_Opt, S0_Tda])
         # steps.add([soc, edme])
-        steps.add([soc])
+        steps.add([T1_Tda, soc])
         step = Step(f"mol{mol_idx}", steps)
 
         property_steps.append(step)
@@ -161,6 +187,7 @@ def main():
     # assert(wf.query_status() == 'Succeeded')
     # step = wf.query_step(name="sp")[0]
     # download_artifact(step.outputs.artifacts["output"])
+
 
 
 if __name__ == "__main__":
